@@ -1,4 +1,4 @@
-To run this:
+To run this frontend:
 
 ```bash
 npm install

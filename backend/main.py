@@ -18,7 +18,7 @@ workflow.add_edge("categorizer", END)
 graph = workflow.compile()
 
 # ----- FastAPI -----
-app = FastAPI(title="Transaction Categorizer Multi-Agent")
+app = FastAPI(title="Transaction Categorizer Multi-Agent", )
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -40,12 +40,14 @@ async def categorize_file(file: UploadFile = File(...)):
         }
         output_state = await graph.ainvoke(initial_state)
         df = output_state["df"]
-        return JSONResponse({"data": df.to_dict(orient="records")})
+        return JSONResponse(status_code=200,content={"status": "successed"})
+    except Exception as e:
+        return JSONResponse(status_code = 500, content={"status": "failed", "error": str(e)})
     finally:
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
 
-@app.get("/health")
+@app.post("/health", status_code=201)
 def health():
     return {"ok": True}
 

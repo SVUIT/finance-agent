@@ -6,3 +6,7 @@ langchain-openai
 uvicorn
 fastapi
 python-multipart
+tidb-vector
+sqlalchemy
+pymysql
+openai

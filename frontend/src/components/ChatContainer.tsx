@@ -46,18 +46,6 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ messages, isTyping
                 <span className="text-sm font-bold text-gray-600 dark:text-gray-300 tracking-wide">Chat Session Started</span>
                 <Sparkles className="w-4 h-4 text-violet-500 dark:text-violet-400 animate-pulse" />
               </div>
-              
-              <div className="flex items-center justify-center gap-6 text-xs text-gray-500 dark:text-gray-400">
-                <div className="flex items-center gap-2">
-                  <Zap className="w-3 h-3" />
-                  <span className="font-medium">Ultra-fast responses</span>
-                </div>
-                <div className="w-1 h-1 bg-gray-400 dark:bg-gray-500 rounded-full"></div>
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-3 h-3" />
-                  <span className="font-medium">AI-powered assistance</span>
-                </div>
-              </div>
             </div>
           )}
           

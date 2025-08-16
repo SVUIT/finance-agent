@@ -8,6 +8,7 @@ npm run dev
 
 Node version v22.17.0.
 
+Frontend run on http://localhost:5173
 
 ### Backend:
 #### Setup Environment

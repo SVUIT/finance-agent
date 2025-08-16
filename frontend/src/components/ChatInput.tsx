@@ -1,14 +1,19 @@
-import React, { useState } from 'react';
-import { Send, Mic, Paperclip, Smile, Image, Code, Zap } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Send, Paperclip } from 'lucide-react';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
+  onUploadFile?: (file: File) => void; // 👈 new prop for handling uploads
   disabled?: boolean;
 }
 
-export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = false }) => {
+export const ChatInput: React.FC<ChatInputProps> = ({ 
+  onSendMessage, 
+  onUploadFile,
+  disabled = false 
+}) => {
   const [message, setMessage] = useState('');
-  const [isRecording, setIsRecording] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,34 +30,40 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = 
     }
   };
 
-  const toggleRecording = () => {
-    setIsRecording(!isRecording);
+  const handleFileClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onUploadFile) {
+      onUploadFile(file); // send file to parent
+    }
+    e.target.value = ''; // reset so same file can be re-selected
   };
 
   return (
     <div className="p-6 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-t border-white/20 dark:border-gray-700/30 transition-colors duration-300">
       <form onSubmit={handleSubmit} className="flex items-end gap-4">
+        
+        {/* File Upload */}
         <div className="flex gap-2">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className="hidden"
+          />
           <button
             type="button"
+            onClick={handleFileClick}
             className="w-11 h-11 bg-gray-100/80 dark:bg-gray-800/80 hover:bg-gray-200/80 dark:hover:bg-gray-700/80 rounded-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 backdrop-blur-sm group"
           >
             <Paperclip className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:rotate-12 transition-transform duration-300" />
           </button>
-          <button
-            type="button"
-            className="w-11 h-11 bg-gray-100/80 dark:bg-gray-800/80 hover:bg-gray-200/80 dark:hover:bg-gray-700/80 rounded-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 backdrop-blur-sm group"
-          >
-            <Image className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:scale-110 transition-transform duration-300" />
-          </button>
-          <button
-            type="button"
-            className="w-11 h-11 bg-gray-100/80 dark:bg-gray-800/80 hover:bg-gray-200/80 dark:hover:bg-gray-700/80 rounded-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 backdrop-blur-sm group"
-          >
-            <Code className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:rotate-12 transition-transform duration-300" />
-          </button>
         </div>
 
+        {/* Message Input */}
         <div className="flex-1 relative">
           <textarea
             value={message}
@@ -80,36 +91,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = 
             <Send className="w-5 h-5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
           </button>
         </div>
-
-        <button
-          type="button"
-          onClick={toggleRecording}
-          className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 shadow-xl group ${
-            isRecording
-              ? 'bg-gradient-to-br from-red-500 to-pink-600 dark:from-red-400 dark:to-pink-500 shadow-red-500/25 dark:shadow-red-400/20 animate-pulse'
-              : 'bg-gradient-to-br from-emerald-500 to-teal-600 dark:from-emerald-400 dark:to-teal-500 hover:from-emerald-600 hover:to-teal-700 dark:hover:from-emerald-500 dark:hover:to-teal-600 shadow-emerald-500/25 dark:shadow-emerald-400/20'
-          }`}
-        >
-          <Mic className={`w-5 h-5 text-white transition-transform duration-300 ${isRecording ? 'scale-110' : 'group-hover:scale-110'}`} />
-        </button>
       </form>
-      
-      {/* Quick actions */}
-      <div className="flex items-center justify-between mt-4 opacity-60 hover:opacity-100 transition-opacity duration-300">
-        <div className="flex items-center gap-4">
-          <button className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 hover:text-violet-500 dark:hover:text-violet-400 transition-colors duration-200 font-medium">
-            <Zap className="w-3 h-3" />
-            Quick Reply
-          </button>
-          <button className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 hover:text-violet-500 dark:hover:text-violet-400 transition-colors duration-200 font-medium">
-            <Smile className="w-3 h-3" />
-            Suggestions
-          </button>
-        </div>
-        <div className="text-xs text-gray-400 dark:text-gray-500 font-medium">
-          Press Enter to send, Shift+Enter for new line
-        </div>
-      </div>
     </div>
   );
 };

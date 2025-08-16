@@ -1,0 +1,12 @@
+python-dotenv
+langgraph
+pandas
+langchain-core
+langchain-openai
+uvicorn
+fastapi
+python-multipart
+tidb-vector
+sqlalchemy
+pymysql
+openai

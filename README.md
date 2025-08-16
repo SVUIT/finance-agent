@@ -1,4 +1,4 @@
-### To run this frontend:
+### Frontend:
 ### Setting up .env for connecting to backend
 
 Create `.env` 
@@ -7,6 +7,8 @@ Create `.env`
 VITE_API_URL=****
 
 ```
+
+### Run frontend
 ```bash
 npm install
 npm run dev

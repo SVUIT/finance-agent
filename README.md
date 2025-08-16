@@ -10,6 +10,7 @@ VITE_API_URL=****
 
 ### Run frontend
 ```bash
+cd frontend
 npm install
 npm run dev
 ```

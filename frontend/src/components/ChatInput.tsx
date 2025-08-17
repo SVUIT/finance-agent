@@ -49,8 +49,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       if (!res.ok) {
         throw new Error(`Upload failed: ${res.status}`);
       }
-
-      const data = await res.json();
       alert("File uploaded successfully!");
     } catch (err) {
       console.error(err);

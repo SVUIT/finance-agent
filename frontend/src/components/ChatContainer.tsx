@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { ChatMessage } from './ChatMessage';
 import { TypingIndicator } from './TypingIndicator';
 import { Message } from '../types/chat';
-import { Sparkles, Zap } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 interface ChatContainerProps {
   messages: Message[];
@@ -45,18 +45,6 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ messages, isTyping
                 <div className="w-3 h-3 bg-green-500 dark:bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
                 <span className="text-sm font-bold text-gray-600 dark:text-gray-300 tracking-wide">Chat Session Started</span>
                 <Sparkles className="w-4 h-4 text-violet-500 dark:text-violet-400 animate-pulse" />
-              </div>
-              
-              <div className="flex items-center justify-center gap-6 text-xs text-gray-500 dark:text-gray-400">
-                <div className="flex items-center gap-2">
-                  <Zap className="w-3 h-3" />
-                  <span className="font-medium">Ultra-fast responses</span>
-                </div>
-                <div className="w-1 h-1 bg-gray-400 dark:bg-gray-500 rounded-full"></div>
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-3 h-3" />
-                  <span className="font-medium">AI-powered assistance</span>
-                </div>
               </div>
             </div>
           )}

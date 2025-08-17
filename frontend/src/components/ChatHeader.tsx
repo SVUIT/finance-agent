@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, MoreVertical, Zap, Shield, Sparkles, Moon, Sun, Settings } from 'lucide-react';
+import { Bot, MoreVertical, Moon, Sun } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
 export const ChatHeader: React.FC = () => {
@@ -17,34 +17,12 @@ export const ChatHeader: React.FC = () => {
         </div>
         <div>
           <div className="flex items-center gap-3">
-            <h3 className="font-bold text-gray-900 dark:text-white text-xl tracking-tight">AI Assistant</h3>
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-violet-500 dark:text-violet-400 animate-pulse" />
-              <span className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/50 px-3 py-1.5 rounded-full border border-violet-200 dark:border-violet-700">GPT-4 Turbo</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-4 mt-2">
-            <p className="text-sm text-green-500 dark:text-green-400 flex items-center gap-2 font-semibold">
-              <span className="w-2.5 h-2.5 bg-green-500 dark:bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-500/50"></span>
-              Online & Ready
-            </p>
-            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full">
-              <Shield className="w-3 h-3" />
-              <span className="font-medium">Encrypted</span>
-            </div>
-            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full">
-              <Zap className="w-3 h-3" />
-              <span className="font-medium">Ultra Fast</span>
-            </div>
+            <h3 className="font-bold text-gray-900 dark:text-white text-xl tracking-tight">Finance Agent</h3>
           </div>
         </div>
       </div>
       
       <div className="flex items-center gap-3">
-        <div className="text-right mr-4 hidden sm:block">
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Avg Response</p>
-          <p className="text-sm font-bold text-green-600 dark:text-green-400">~0.6s</p>
-        </div>
         
         <button
           onClick={toggleTheme}
@@ -56,11 +34,7 @@ export const ChatHeader: React.FC = () => {
             <Moon className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:rotate-12 transition-transform duration-300" />
           )}
         </button>
-        
-        <button className="p-3 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 rounded-2xl transition-all duration-300 hover:scale-110 active:scale-95 backdrop-blur-sm group">
-          <Settings className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:rotate-90 transition-transform duration-300" />
-        </button>
-        
+          
         <button className="p-3 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 rounded-2xl transition-all duration-300 hover:scale-110 active:scale-95 backdrop-blur-sm">
           <MoreVertical className="w-5 h-5 text-gray-600 dark:text-gray-400" />
         </button>

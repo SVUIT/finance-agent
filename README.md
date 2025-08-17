@@ -1,20 +1,29 @@
-To run this frontend:
+### Frontend:
+### Setting up .env for connecting to backend
 
+Create `.env` 
 ```bash
+
+VITE_API_URL=****
+
+```
+
+### Run frontend
+```bash
+cd frontend
 npm install
 npm run dev
 ```
 
 Node version v22.17.0.
 
-
 ### Backend:
 #### Setup Environment
 Create `.env` 
 ```bash
-OPENAI_API_KEY=
+OPENAI_API_KEY=****
 
-TIDB_DATABASE_URL=
+TIDB_DATABASE_URL=****
 ```
 #### Run Backend 
 ```bash

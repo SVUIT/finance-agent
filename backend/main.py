@@ -51,7 +51,7 @@ async def categorize_file(file: UploadFile = File(...)):
         return JSONResponse(status_code=200, content={"status": "successed"})
     except Exception as e:
         print("Error in /categorize:", e)
-        traceback.print_exc()
+        #traceback.print_exc()
         return JSONResponse(status_code=500, content={"status": "failed", "error": str(e)})
     finally:
         if os.path.exists(tmp_path):

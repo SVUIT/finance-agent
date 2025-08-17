@@ -51,7 +51,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       }
 
       const data = await res.json();
-      console.log("Upload success:", data);
       alert("File uploaded successfully!");
     } catch (err) {
       console.error(err);

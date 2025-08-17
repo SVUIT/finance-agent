@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, MoreVertical, Zap, Shield, Sparkles, Moon, Sun, Settings } from 'lucide-react';
+import { Bot, MoreVertical, Moon, Sun } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
 export const ChatHeader: React.FC = () => {

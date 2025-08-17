@@ -40,9 +40,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       formData.append("file", file);
 
       const res = await fetch(`${import.meta.env.VITE_API_URL}/categorize`, {
-        method: "POST",
-        body: formData,
-      });
+    method: "POST",
+    body: formData,
+    credentials: "include", 
+});
+
 
       if (!res.ok) {
         throw new Error(`Upload failed: ${res.status}`);

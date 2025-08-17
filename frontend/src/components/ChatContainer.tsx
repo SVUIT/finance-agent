@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { ChatMessage } from './ChatMessage';
 import { TypingIndicator } from './TypingIndicator';
 import { Message } from '../types/chat';
-import { Sparkles, Zap } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 interface ChatContainerProps {
   messages: Message[];

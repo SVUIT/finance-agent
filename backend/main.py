@@ -29,20 +29,30 @@ app.add_middleware(
 
 @app.post("/categorize")
 async def categorize_file(file: UploadFile = File(...)):
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as tmp:
-        tmp_path = tmp.name
-        content = await file.read()
-        tmp.write(content)
     try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as tmp:
+            tmp_path = tmp.name
+            content = await file.read()
+            tmp.write(content)
+        print("CSV saved to:", tmp_path)
+
         initial_state: GraphState = {
             "file_path": tmp_path,
             "message": []
         }
+
         output_state = await graph.ainvoke(initial_state)
-        df = output_state["df"]
-        return JSONResponse(status_code=200,content={"status": "successed"})
+        print("Graph output_state:", output_state)
+
+        df = output_state.get("df")
+        if df is None:
+            raise ValueError("df not found in output_state")
+
+        return JSONResponse(status_code=200, content={"status": "successed"})
     except Exception as e:
-        return JSONResponse(status_code = 500, content={"status": "failed", "error": str(e)})
+        print("Error in /categorize:", e)
+        #traceback.print_exc()
+        return JSONResponse(status_code=500, content={"status": "failed", "error": str(e)})
     finally:
         if os.path.exists(tmp_path):
             os.remove(tmp_path)

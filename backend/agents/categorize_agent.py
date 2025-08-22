@@ -63,40 +63,6 @@ async def categorize(state: GraphState) -> GraphState:
             model=model
         )
         return response.data[0].embedding
-    # embed_model = SentenceTransformer("sentence-transformers/msmarco-MiniLM-L12-cos-v5", device="cpu")
-    # embed_model_dims = embed_model.get_sentence_embedding_dimension()
-    # def text_to_embedding(text):
-    #     """Generates vector embeddings for the given text."""
-    #     embedding = embed_model.encode(text)
-    #     return embedding.tolist()
-
-    # # Load model from HuggingFace Hub
-    # tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/msmarco-MiniLM-L12-cos-v5", token = os.getenv("HF_TOKEN"))
-    # model = AutoModel.from_pretrained("sentence-transformers/msmarco-MiniLM-L12-cos-v5", token = os.getenv("HF_TOKEN"))
-    # embed_model_dims = model.config.hidden_size
-    # #Mean Pooling - Take average of all tokens
-    # def mean_pooling(model_output, attention_mask):
-    #     token_embeddings = model_output.last_hidden_state #First element of model_output contains all token embeddings
-    #     input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-    #     return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
-
-
-    # #Encode text
-    # def encode(texts):
-    #     # Tokenize sentences
-    #     encoded_input = tokenizer(texts, padding=True, truncation=True, return_tensors='pt')
-
-    #     # Compute token embeddings
-    #     with torch.no_grad():
-    #         model_output = model(**encoded_input, return_dict=True)
-
-    #     # Perform pooling
-    #     embeddings = mean_pooling(model_output, encoded_input['attention_mask'])
-
-    #     # Normalize embeddings
-    #     embeddings = F.normalize(embeddings, p=2, dim=1)
-        
-    #     return embeddings[0].tolist()
     
     vector_store = TiDBVectorClient(
         # The 'embedded_documents' table will store the vector data.

@@ -9,5 +9,5 @@ python-multipart
 tidb-vector
 sqlalchemy
 pymysql
-openai
 langchain_community
+sqlmodel

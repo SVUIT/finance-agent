@@ -15,6 +15,10 @@ npm install
 npm run dev
 ```
 
+### Routes
+
+ /login , /signup
+
 Node version v22.17.0.
 
 ### Backend:

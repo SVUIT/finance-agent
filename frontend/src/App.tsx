@@ -1,11 +1,13 @@
 import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ChatHeader } from './components/ChatHeader';
 import { ChatContainer } from './components/ChatContainer';
 import { ChatInput } from './components/ChatInput';
 import { useChat } from './hooks/useChat';
 import { ThemeProvider } from './contexts/ThemeContext';
+import LoginApp from './loginUI/App';
 
-function AppContent() {
+function ChatApp() {
   const { messages, isTyping, sendMessage } = useChat();
 
   return (
@@ -43,7 +45,13 @@ function AppContent() {
 function App() {
   return (
     <ThemeProvider>
-      <AppContent />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<ChatApp />} />
+          <Route path="/login" element={<LoginApp mode="login" />} />
+          <Route path="/signup" element={<LoginApp mode="signup" />} />
+        </Routes>
+      </BrowserRouter>
     </ThemeProvider>
   );
 }

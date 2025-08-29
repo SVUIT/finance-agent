@@ -21,10 +21,10 @@ class DatabaseService:
             SQLModel.metadata.create_all(self.engine)
 
             # define vectorstore
-            embeddings = OpenAIEmbeddings(api_key=settings.LLM_API_KEY)
+            self.embeddings = OpenAIEmbeddings(api_key=settings.LLM_API_KEY)
 
             self.vectorstore = TiDBVectorStore(
-                embedding_function=embeddings,
+                embedding_function=self.embeddings,
                 table_name="embedding_data",
                 connection_string=settings.TIDB_DATABASE_URL,
                 distance_strategy="cosine",  # default, another option is "l2"

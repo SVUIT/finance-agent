@@ -1,0 +1,24 @@
+services:
+  backend:
+    build: ./backend
+    container_name: backend
+    env_file: ./backend/.env
+    ports:
+      - "8000:8000"
+    networks:
+      - appnet
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - appnet
+    environment:
+      - VITE_API_URL=http://backend:8000
+
+networks:
+  appnet:

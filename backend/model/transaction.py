@@ -2,6 +2,7 @@ from typing import List
 import uuid
 from sqlmodel import Field, SQLModel
 from datetime import datetime
+from pydantic import BaseModel
 
 class Transaction(SQLModel, table=True):
     
@@ -14,3 +15,11 @@ class Transaction(SQLModel, table=True):
     transaction_type: str
     category: str
     subcategory: str
+
+class TransactionCreate(BaseModel):
+    name: str
+    amount: float
+    currency: str
+    created_at: datetime
+    transaction_type: str
+    transfer_note: str = ""

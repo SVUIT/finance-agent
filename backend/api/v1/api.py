@@ -12,23 +12,13 @@ from service.database import database_service
 from utils.extract_currency import extract_amount_currency
 from core.config import settings
 from langchain_openai import ChatOpenAI
+from model.transaction import TransactionCreate
 api_router = APIRouter()
 
-@api_router.get("/health")
-async def health_check():
-    return {"status": "healthy", "version": "1.0.0"}
 
-@api_router.post("/categorize")
-async def categorize_file(file: UploadFile = File(...)):
-    try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as tmp:
-            tmp_path = tmp.name
-            content = await file.read()
-            tmp.write(content)
-        print("CSV saved to:", tmp_path)
-        df = pd.read_csv(tmp_path)
-        if df is None:
-            raise ValueError("df not found in output_state")
+llm = ChatOpenAI(model_name="gpt-4o-mini", api_key=settings.LLM_API_KEY)
+
+def classify_transaction(name, created_at, transfer_note):
         prompt_template = """
         You are a financial transaction categorization assistant.
 
@@ -59,33 +49,56 @@ async def categorize_file(file: UploadFile = File(...)):
         created_at: {created_at}
         transfer_note: {transfer_note}
         """
-        llm = ChatOpenAI(model_name="gpt-4o-mini", api_key=settings.LLM_API_KEY)
-        def classify_transaction(row):
-            print("Prompt to LLM:", prompt_template.format(
-            name=row["name"],
-            created_at=row["created_at"],
-            transfer_note=row["transfer_note"]
+        print("Prompt to LLM:", prompt_template.format(
+            name=name,
+            created_at=created_at,
+            transfer_note=transfer_note
         ))
-            response = llm.invoke([
-                SystemMessage(content="You are a helpful assistant that classifies financial transactions."),
-                HumanMessage(content=prompt_template.format(
-                    name=row["name"],
-                    created_at=row["created_at"],
-                    transfer_note=row["transfer_note"]
-                ))
-            ])
-            try:
-                result = json.loads(response.content.strip())
-                print("LLM response:", response.content)
-                return result.get("category", ""), result.get("subcategory", "")
-            except Exception as e:
-                print("LLM response:", repr(response.content))
-                print(e)
-                return "", ""
-        df[["category", "subcategory"]] = df.apply(lambda row: pd.Series(classify_transaction(row)), axis=1)   
+        response = llm.invoke([
+            SystemMessage(content="You are a helpful assistant that classifies financial transactions."),
+            HumanMessage(content=prompt_template.format(
+                name=name,
+                created_at=created_at,
+                transfer_note=transfer_note
+            ))
+        ])
+        try:
+            result = json.loads(response.content.strip())
+            print("LLM response:", response.content)
+            return result.get("category", ""), result.get("subcategory", "")
+        except Exception as e:
+            print("LLM response:", repr(response.content))
+            print(e)
+            return "", ""
+            
+@api_router.get("/health")
+async def health_check():
+    return {"status": "healthy", "version": "1.0.0"}
+
+@api_router.post("/categorize")
+async def categorize_file(file: UploadFile = File(...)):
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as tmp:
+            tmp_path = tmp.name
+            content = await file.read()
+            tmp.write(content)
+
+        print("CSV saved to:", tmp_path)
+        # Read csv
+        df = pd.read_csv(tmp_path)
+        if df is None:
+            raise ValueError("df not found in output_state")
+        
+        # Categorize transaction
+        df[["category", "subcategory"]] = df.apply(lambda row: pd.Series(classify_transaction(row["name"], row["created_at"], row["transfer_note"])), axis=1)   
+        
+        # Extract currency
         df[['amount', 'currency']] = df['amount'].apply(lambda row: pd.Series(extract_amount_currency(row)))
+        
+        # Format datetime
         df["created_at"] = pd.to_datetime(df["created_at"])
         documents = []
+
         for _, row in df.iterrows():
             id = str(uuid.uuid4())
             documents.append({
@@ -94,6 +107,8 @@ async def categorize_file(file: UploadFile = File(...)):
                     "id": str(id),
                 }
             })
+
+            # create transaction in upload to sql 
             await database_service.create_transaction(
                 id=id,
                 name=row["name"],
@@ -104,6 +119,7 @@ async def categorize_file(file: UploadFile = File(...)):
                 category=row["category"],
                 subcategory=row["subcategory"]
             )
+        # upload to vectorstore
         database_service.vectorstore.add_texts(
             texts=[
                 doc["texts"] for doc in documents
@@ -112,15 +128,6 @@ async def categorize_file(file: UploadFile = File(...)):
                 doc["metadatas"] for doc in documents
             ]
         )
-        # initial_state: GraphState = {
-        #     "file_path": tmp_path,
-        #     "message": []
-        # }
-
-        # output_state = await graph.ainvoke(initial_state)
-        # print("Graph output_state:", output_state)
-
-        # df = output_state.get("df")
         return JSONResponse(status_code=200, content={"status": "successed"})
     except Exception as e:
         print("Error in /categorize:", e)
@@ -130,6 +137,35 @@ async def categorize_file(file: UploadFile = File(...)):
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
 
+@api_router.post("/add-transaction")
+async def add_transaction(transaction: TransactionCreate):
+    try:
+        id = str(uuid.uuid4())
+        print(f"""
+            {id}, {transaction.name}, {transaction.currency}, {transaction.amount}, {transaction.created_at}, {transaction.transfer_note},
+            {transaction.transaction_type}
+        """)
+        category, subcategory = classify_transaction(transaction.name, transaction.created_at, transaction.transfer_note)
+        await database_service.create_transaction(
+            id=id,
+            name=transaction.name,
+            currency=transaction.currency,
+            amount=transaction.amount,
+            created_at=transaction.created_at,
+            transaction_type=transaction.transaction_type,
+            category=category,
+            subcategory=subcategory
+        )
+        # a = await chatbot_endpoint()
+        text = f"{transaction.name}. Note: {transaction.transfer_note}. Subcategory: {subcategory}. Category: {category}"
+        database_service.vectorstore.add_texts(
+            texts=[text],
+            metadatas=[{"id": id}]
+        )
+        return {"status": "success", "id": id}
+    except Exception as e:
+        print("Error in /add-transaction:", e)
+        return JSONResponse(status_code=500, content={"status": "failed", "error": str(e)})
 
 @api_router.post("/chatbot")
 async def chatbot_endpoint(request: Request):

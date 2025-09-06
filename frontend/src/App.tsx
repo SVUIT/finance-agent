@@ -1,14 +1,39 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ChatHeader } from './components/ChatHeader';
 import { ChatContainer } from './components/ChatContainer';
 import { ChatInput } from './components/ChatInput';
+import Settings from './components/Settings';
+import ErrorBoundary from './components/ErrorBoundary';
 import { useChat } from './hooks/useChat';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginApp from './loginUI/App';
 
+// Protected Route Component
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <>{children}</>;
+}
+
 function ChatApp() {
-  const { messages, isTyping, sendMessage } = useChat();
+  const { messages, isTyping, sendMessage, uploadFile } = useChat();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900 flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-500">
@@ -35,7 +60,7 @@ function ChatApp() {
         <div className="relative z-10 flex flex-col h-full">
           <ChatHeader />
           <ChatContainer messages={messages} isTyping={isTyping} />
-          <ChatInput onSendMessage={sendMessage} disabled={isTyping} />
+          <ChatInput onSendMessage={sendMessage} onUploadFile={uploadFile} disabled={isTyping} />
         </div>
       </div>
     </div>
@@ -44,15 +69,28 @@ function ChatApp() {
 
 function App() {
   return (
-    <ThemeProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<ChatApp />} />
-          <Route path="/login" element={<LoginApp mode="login" />} />
-          <Route path="/signup" element={<LoginApp mode="signup" />} />
-        </Routes>
-      </BrowserRouter>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <ChatApp />
+                </ProtectedRoute>
+              } />
+              <Route path="/settings" element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              } />
+              <Route path="/login" element={<LoginApp mode="login" />} />
+              <Route path="/signup" element={<LoginApp mode="signup" />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

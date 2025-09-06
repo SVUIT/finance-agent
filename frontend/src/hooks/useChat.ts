@@ -1,16 +1,21 @@
 import { useState, useCallback } from 'react';
 import { Message, ChatState } from '../types/chat';
+import { useAuth } from '../contexts/AuthContext';
+import { apiRequestWithAuth, apiRequestWithRetry } from '../utils/api';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const initialMessages: Message[] = [
   {
     id: '1',
-    text: "Hello! I'm your advanced AI assistant powered by cutting-edge technology. I'm here to help you with anything you need. What would you like to explore today?",
+    text: "Xin chào! Tôi là trợ lý AI tài chính thông minh. Tôi có thể giúp bạn phân loại giao dịch tài chính từ file CSV. Hãy upload file CSV của bạn để bắt đầu!",
     isUser: false,
     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   },
 ];
 
 export const useChat = () => {
+  const { token } = useAuth();
   const [chatState, setChatState] = useState<ChatState>({
     messages: initialMessages,
     isTyping: false,
@@ -30,20 +35,36 @@ export const useChat = () => {
       isTyping: true,
     }));
 
-    // Simulate AI response with more sophisticated responses
-    setTimeout(() => {
-      const responses = [
-        "That's a fascinating question! I've analyzed your request and here's my comprehensive response. Let me break this down for you in a way that's both informative and actionable.",
-        "Excellent point! Based on the latest data and trends, I can provide you with some valuable insights that should help guide your decision-making process.",
-        "I appreciate you bringing this up! This is actually a complex topic that deserves a thoughtful response. Let me share some key perspectives and recommendations.",
-        "Great question! I've processed your request using advanced reasoning capabilities. Here's what I've found, along with some practical next steps you might consider.",
-        "Thank you for that detailed question! I can see you're looking for a comprehensive answer. Let me provide you with a thorough analysis and some actionable recommendations.",
-        "This is an interesting challenge! I've analyzed multiple approaches to this problem. Here's my recommended solution along with the reasoning behind it.",
-      ];
+    try {
+      // Gửi tin nhắn đến backend với retry logic
+      const result = await apiRequestWithRetry('/chat', {
+        method: 'POST',
+        body: JSON.stringify({ message: text }),
+      }, 2);
 
+      if (result.success && result.data) {
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: result.data.message || 'Tôi đã nhận được tin nhắn của bạn. Vui lòng upload file CSV để tôi có thể giúp bạn phân loại giao dịch.',
+          isUser: false,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+
+        setChatState(prev => ({
+          ...prev,
+          messages: [...prev.messages, botMessage],
+          isTyping: false,
+        }));
+      } else {
+        throw new Error(result.error || 'Lỗi kết nối đến server');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      
+      // Fallback response nếu không kết nối được backend
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: responses[Math.floor(Math.random() * responses.length)],
+        text: "Xin lỗi, tôi không thể kết nối đến server lúc này. Vui lòng thử lại sau hoặc kiểm tra kết nối mạng.",
         isUser: false,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
@@ -53,12 +74,68 @@ export const useChat = () => {
         messages: [...prev.messages, botMessage],
         isTyping: false,
       }));
-    }, 2000 + Math.random() * 1500);
+    }
+  }, []);
+
+  const uploadFile = useCallback(async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    setChatState(prev => ({
+      ...prev,
+      isTyping: true,
+    }));
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/categorize`, {
+        method: 'POST',
+        headers: {
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: data.status === 'successed' 
+            ? `✅ File "${file.name}" đã được xử lý thành công! Tôi đã phân loại các giao dịch trong file của bạn.`
+            : `❌ Có lỗi xảy ra khi xử lý file "${file.name}". Vui lòng thử lại.`,
+          isUser: false,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+
+        setChatState(prev => ({
+          ...prev,
+          messages: [...prev.messages, botMessage],
+          isTyping: false,
+        }));
+      } else {
+        throw new Error('Lỗi xử lý file');
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error);
+
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: `❌ Không thể xử lý file "${file.name}". Vui lòng kiểm tra định dạng file và thử lại.`,
+        isUser: false,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+
+      setChatState(prev => ({
+        ...prev,
+        messages: [...prev.messages, botMessage],
+        isTyping: false,
+      }));
+    }
   }, []);
 
   return {
     messages: chatState.messages,
     isTyping: chatState.isTyping,
     sendMessage,
+    uploadFile,
   };
 };

@@ -10,3 +10,6 @@ tidb-vector
 sqlalchemy
 pymysql
 openai
+pyjwt
+passlib[bcrypt]
+python-jose[cryptography]

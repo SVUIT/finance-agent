@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, User, CheckCircle, AlertCircle } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface FormData {
   name?: string;
@@ -36,6 +38,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ initialMode = 'login' }) => {
     rememberMe: false,
   });
   const [errors, setErrors] = useState<FormErrors>({});
+  
+  const { login, signup } = useAuth();
+  const navigate = useNavigate();
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -89,14 +94,27 @@ const AuthForm: React.FC<AuthFormProps> = ({ initialMode = 'login' }) => {
     if (!validateForm()) return;
     
     setIsLoading(true);
+    setErrors({});
     
-    // Simulate API call
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log(isLogin ? 'Login successful' : 'Signup successful', formData);
-      setErrors({ general: isLogin ? 'Welcome back!' : 'Account created successfully!' });
+      let result;
+      if (isLogin) {
+        result = await login(formData.email, formData.password);
+      } else {
+        result = await signup(formData.name || '', formData.email, formData.password);
+      }
+      
+      if (result.success) {
+        setErrors({ general: result.message });
+        // Redirect to main app after successful login/signup
+        setTimeout(() => {
+          navigate('/');
+        }, 1500);
+      } else {
+        setErrors({ general: result.message });
+      }
     } catch (error) {
-      setErrors({ general: 'Something went wrong. Please try again.' });
+      setErrors({ general: 'Có lỗi xảy ra. Vui lòng thử lại.' });
     } finally {
       setIsLoading(false);
     }

@@ -25,15 +25,11 @@ app = FastAPI(title="Transaction Categorizer Multi-Agent")
 
 create_tables()
 
-origins = [
-    "https://turbo-space-parakeet-49rr495gp4pc7557-3000.app.github.dev",  # frontend
-    "https://*.app.github.dev",  # allow GitHub Codespaces wildcards
-    "http://localhost:3000",      # optional local dev
-]
+
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],  # allow all origins
     allow_credentials=True,
     allow_methods=["*"],  # allow POST, GET, OPTIONS, etc.
     allow_headers=["*"],  # allow Content-Type, Authorization, etc.

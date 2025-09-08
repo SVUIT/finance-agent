@@ -25,14 +25,12 @@ app = FastAPI(title="Transaction Categorizer Multi-Agent")
 
 create_tables()
 
-
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # allow all origins
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # allow POST, GET, OPTIONS, etc.
-    allow_headers=["*"],  # allow Content-Type, Authorization, etc.
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 security = HTTPBearer()
@@ -59,7 +57,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     except Exception:
         raise HTTPException(status_code=401, detail="Xác thực thất bại")
 
-@app.api_route("/auth/signup", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
+@app.post("/auth/signup")
 async def signup(req: SignupRequest, db: Session = Depends(get_db)):
     try:
         user = create_user(db, req.name, req.email, req.password)
@@ -75,7 +73,7 @@ async def signup(req: SignupRequest, db: Session = Depends(get_db)):
     except Exception:
         raise HTTPException(status_code=500, detail="Có lỗi xảy ra khi đăng ký")
 
-@app.api_route("/auth/login", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
+@app.post("/auth/login")
 async def login(req: LoginRequest, db: Session = Depends(get_db)):
     try:
         user = authenticate_user(db, req.email, req.password)
@@ -93,7 +91,7 @@ async def login(req: LoginRequest, db: Session = Depends(get_db)):
     except Exception:
         raise HTTPException(status_code=500, detail="Có lỗi xảy ra khi đăng nhập")
 
-@app.api_route("/auth/me", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
+@app.get("/auth/me")
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
     return {
         "id": current_user.id,
@@ -190,4 +188,3 @@ def health():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-        return None

@@ -110,14 +110,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   onClick={handleCsvUpload}
                   className="w-full px-4 py-3 text-left hover:bg-gray-100/80 dark:hover:bg-gray-700/80 transition-colors duration-200 flex items-center gap-3"
                 >
-                  <FileText className="w-4 h-4 text-blue-500" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Upload CSV</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleManualInput}
-                  className="w-full px-4 py-3 text-left hover:bg-gray-100/80 dark:hover:bg-gray-700/80 transition-colors duration-200 flex items-center gap-3 border-t border-gray-200/50 dark:border-gray-700/50"
-                >
                   <Edit3 className="w-4 h-4 text-green-500" />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Nhập tay dữ liệu</span>
                 </button>

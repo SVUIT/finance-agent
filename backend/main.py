@@ -78,7 +78,7 @@ async def login(req: LoginRequest, db: Session = Depends(get_db)):
     try:
         user = authenticate_user(db, req.email, req.password)
         if not user:
-            raise HTTPException(status_code=401, detail="Email hoặc mật khẩu không đúng")
+            raise HTTPException(status_code=404, detail="Email hoặc mật khẩu không đúng")
         access_token = create_access_token(data={"sub": str(user.id)})
         return {
             "message": "Đăng nhập thành công!",

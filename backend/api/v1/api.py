@@ -13,11 +13,12 @@ from utils.extract_currency import extract_amount_currency
 from core.config import settings
 from langchain_openai import ChatOpenAI
 from model.transaction import TransactionCreate
+from collections import Counter
+import asyncio
+from utils.format_datetime import format_datetime
 api_router = APIRouter()
-
-
 llm = ChatOpenAI(model_name="gpt-4o-mini", api_key=settings.LLM_API_KEY)
-
+# Optional: Set a tracking URI and an experiment
 def classify_transaction(name, created_at, transfer_note):
         prompt_template = """
         You are a financial transaction categorization assistant.
@@ -101,8 +102,14 @@ async def categorize_file(file: UploadFile = File(...)):
 
         for _, row in df.iterrows():
             id = str(uuid.uuid4())
+            if str.lower(row['transaction_type']) == "outgoing":
+                texts = f"This is outgoing transaction. Sender is me, Beneficiary is {row['name']}.The transaction was processed at {format_datetime(str(row['created_at']))}. Note of transaction: {row['transfer_note']}. The transaction was categorized under the subcategory {row['subcategory']} within the category {row['category']}"
+            elif str.lower(row['transaction_type']) == "incoming":
+                texts = f"This is incoming transaction. Sender is {row['name']}, Beneficiary is me. The transaction was processed at {format_datetime(str(row['created_at']))}. Note of transaction: {row['transfer_note']}. The transaction was categorized under the subcategory {row['subcategory']} within the category {row['category']}"
+            else:
+                texts = f"Sender is unknown, Beneficiary is unknown. The transaction was processed at {format_datetime(str(row['created_at']))}. Note of transaction: {row['transfer_note']}. The transaction was categorized under the subcategory {row['subcategory']} within the category {row['category']}"
             documents.append({
-                "texts": f"{row['name']}. Note: {row['transfer_note']}. Subcategory: {row['subcategory']}. Category: {row['category']}",
+                "texts": texts,
                 "metadatas": {
                     "id": str(id),
                 }
@@ -157,7 +164,12 @@ async def add_transaction(transaction: TransactionCreate):
             subcategory=subcategory
         )
         # a = await chatbot_endpoint()
-        text = f"{transaction.name}. Note: {transaction.transfer_note}. Subcategory: {subcategory}. Category: {category}"
+        if str.lower(transaction.transaction_type) == "outgoing":
+            text = f"This is outgoing transaction. Sender is me, Beneficiary is {transaction.name}. The transaction was processed at {format_datetime(str(transaction.created_at))}. Note of transaction: {transaction.transfer_note}. The transaction was categorized under the subcategory {subcategory} within the category {category}."
+        elif str.lower(transaction.transaction_type) == "incoming":
+            text = f"This is incoming transaction. Sender is {transaction.name}, Beneficiary is me. The transaction was processed at {format_datetime(str(transaction.created_at))}. Note of transaction: {transaction.transfer_note}. The transaction was categorized under the subcategory {subcategory} within the category {category}."
+        else:
+            text = f"Sender is unknown, Beneficiary is unknown. The transaction was processed at {format_datetime(str(transaction.created_at))}. Note of transaction: {transaction.transfer_note}. The transaction was categorized under the subcategory {subcategory} within the category {category}."
         database_service.vectorstore.add_texts(
             texts=[text],
             metadatas=[{"id": id}]
@@ -178,21 +190,33 @@ async def chatbot_endpoint(request: Request):
     for msg in messages:
         if msg["role"] == "user":
             formatted_messages.append(HumanMessage(content=msg["content"]))
-        elif msg["role"] == "system":
-            formatted_messages.append(SystemMessage(content=msg["content"]))
         elif msg["role"] == "assistant":
-            formatted_messages.append(AIMessage(content=msg["content"]))
-        else:
-            formatted_messages.append(HumanMessage(content=msg["content"]))  # fallback
-
-    state = State(messages=formatted_messages)
+            # Xử lý cả content và tool_calls nếu có
+            if msg.get("tool_calls"):
+                formatted_messages.append(AIMessage(
+                    content=msg.get("content", ""),
+                    tool_calls=msg["tool_calls"]
+                ))
+            else:
+                formatted_messages.append(AIMessage(content=msg["content"]))
+        elif msg["role"] == "tool":
+            # Xử lý tool messages
+            from langchain_core.messages import ToolMessage
+            formatted_messages.append(ToolMessage(
+                content=msg["content"],
+                tool_call_id=msg["tool_call_id"]
+            ))
+    print(formatted_messages)
+    state = {
+        "messages": formatted_messages,
+        "remaining_steps": 5,   # số vòng lặp tối đa cho agent
+    }
     graph = await agent.create_graph()
-    result = await graph.ainvoke(state)
     # Trả về message cuối cùng của assistant
-    result = await graph.ainvoke(state)
-    last_msg = result["messages"][-1]
-    content = last_msg.content
-    content = serialize_obj(content)
+    content = await run_with_majority_voting(graph, state, n_runs=1)
+    # last_msg = content["messages"][-1]
+    # content = last_msg.content
+    # content = serialize_obj(content)
     return JSONResponse(content={"response": content})
 
 import datetime
@@ -205,3 +229,31 @@ def serialize_obj(obj):
         return obj.isoformat()
     else:
         return obj
+
+from collections import Counter
+import asyncio
+import copy
+async def run_with_majority_voting(graph, state, n_runs=3):
+    answers = []
+    normalized_to_original = {}
+
+    for _ in range(n_runs):
+        result = await graph.ainvoke(copy.deepcopy(state))
+        msgs = result["messages"]
+
+        final_answer = None
+        for m in reversed(msgs):
+            if isinstance(m, AIMessage) and not getattr(m, "tool_calls", None):
+                final_answer = m.content.strip()
+                break
+
+        if final_answer:
+            normalized = final_answer.lower()
+            answers.append(normalized)
+            normalized_to_original.setdefault(normalized, final_answer)
+
+    if not answers:
+        return None
+
+    most_common = Counter(answers).most_common(1)[0][0]
+    return normalized_to_original[most_common]

@@ -8,5 +8,5 @@ and other external integrations.
 from langchain_core.tools.base import BaseTool
 
 from .search import search_transactions
-
-tools: list[BaseTool] = [search_transactions]
+from .calculator import calculator
+tools: list[BaseTool] = [search_transactions, calculator]

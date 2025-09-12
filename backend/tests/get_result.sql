@@ -23,7 +23,7 @@ FROM (
       AND YEAR(created_at) = 2024
       AND MONTH(created_at) = 4
     GROUP BY DATE(created_at)
-) t;
+) ;
 
 -- Top spending category in April 2024
 SELECT category, SUM(amount) AS total_spent

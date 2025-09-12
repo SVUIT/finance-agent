@@ -91,7 +91,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         </div>
       </form>
       {showManualInput && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-gray-900/20 dark:shadow-black/40 border border-gray-200/50 dark:border-gray-700/50 w-full max-w-md animate-modal">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">

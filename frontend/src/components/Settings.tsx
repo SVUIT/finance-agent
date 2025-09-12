@@ -81,12 +81,12 @@ const Settings: React.FC = () => {
     setSettings((p) => ({ ...p, [k]: v }))
 
   return (
-    <div className="p-6 max-w-xl mx-auto relative">
+    <div className="p-6 max-w-xl mx-auto relative overflow-x-auto">
       <button onClick={() => setOpen((o) => !o)} className="absolute top-2 right-2">
         ⚙️
       </button>
       {open && (
-        <div className="absolute top-12 right-2 bg-gray-900 text-white rounded-lg shadow-lg p-3 z-50 w-48 border border-gray-700">
+        <div className="absolute top-12 right-2 bg-gray-900 text-white rounded-lg shadow-lg p-3 z-50 w-48 border border-gray-700 overflow-y-auto max-h-60">
           <button
             onClick={() => navigate("/")}
             className="block w-full text-left px-3 py-2 hover:bg-gray-800 rounded"

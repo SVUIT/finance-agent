@@ -21,7 +21,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ messages, isTyping
   }, [messages, isTyping]);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gradient-to-br from-gray-50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900/20 relative transition-colors duration-300">
+    <div className="flex-1 min-h-0 overflow-y-auto bg-gradient-to-br from-gray-50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900/20 relative transition-colors duration-300">
       {/* Animated background patterns */}
       <div className="absolute inset-0 opacity-[0.02] dark:opacity-[0.05]">
         <div className="absolute inset-0" style={{

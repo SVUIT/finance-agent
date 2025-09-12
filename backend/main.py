@@ -73,12 +73,15 @@ async def signup(req: SignupRequest, db: Session = Depends(get_db)):
     except Exception:
         raise HTTPException(status_code=500, detail="Có lỗi xảy ra khi đăng ký")
 
+import traceback
+
 @app.post("/auth/login")
 async def login(req: LoginRequest, db: Session = Depends(get_db)):
     try:
         user = authenticate_user(db, req.email, req.password)
         if not user:
-            raise HTTPException(status_code=404, detail="Email hoặc mật khẩu không đúng")
+            raise HTTPException(status_code=401, detail="Email hoặc mật khẩu không đúng")
+
         access_token = create_access_token(data={"sub": str(user.id)})
         return {
             "message": "Đăng nhập thành công!",
@@ -88,8 +91,11 @@ async def login(req: LoginRequest, db: Session = Depends(get_db)):
         }
     except HTTPException as e:
         raise e
-    except Exception:
+    except Exception as e:
+        print("🔥 Error in login:", str(e))
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail="Có lỗi xảy ra khi đăng nhập")
+
 
 @app.get("/auth/me")
 async def get_current_user_info(current_user: User = Depends(get_current_user)):

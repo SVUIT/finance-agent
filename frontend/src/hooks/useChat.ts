@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Message, ChatState } from '../types/chat';
 import { useAuth } from '../contexts/AuthContext';
-import { apiRequestWithAuth, apiRequestWithRetry } from '../utils/api';
+import { apiRequestWithRetry } from '../utils/api';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -36,16 +36,19 @@ export const useChat = () => {
     }));
 
     try {
-      // Gửi tin nhắn đến backend với retry logic
       const result = await apiRequestWithRetry('/chat', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
         body: JSON.stringify({ message: text }),
       }, 2);
 
       if (result.success && result.data) {
         const botMessage: Message = {
           id: (Date.now() + 1).toString(),
-          text: result.data.message || 'Tôi đã nhận được tin nhắn của bạn. Vui lòng upload file CSV để tôi có thể giúp bạn phân loại giao dịch.',
+          text: result.data.reply || 'Tôi đã nhận được tin nhắn của bạn. Vui lòng upload file CSV để tôi có thể giúp bạn phân loại giao dịch.',
           isUser: false,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         };
@@ -60,8 +63,7 @@ export const useChat = () => {
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      
-      // Fallback response nếu không kết nối được backend
+
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         text: "Xin lỗi, tôi không thể kết nối đến server lúc này. Vui lòng thử lại sau hoặc kiểm tra kết nối mạng.",
@@ -75,7 +77,7 @@ export const useChat = () => {
         isTyping: false,
       }));
     }
-  }, []);
+  }, [token]);
 
   const uploadFile = useCallback(async (file: File) => {
     const formData = new FormData();
@@ -130,7 +132,7 @@ export const useChat = () => {
         isTyping: false,
       }));
     }
-  }, []);
+  }, [token]);
 
   return {
     messages: chatState.messages,

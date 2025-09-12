@@ -14,6 +14,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [showDropdown, setShowDropdown] = useState(false)
   const [showManualInput, setShowManualInput] = useState(false)
   const dropdownRef = useRef<HTMLDivElement | null>(null)
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -46,6 +47,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   }, [showDropdown])
 
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = '0px'
+      const scrollHeight = textareaRef.current.scrollHeight
+      textareaRef.current.style.height = scrollHeight + 'px'
+    }
+  }, [message])
+
   return (
     <div className="p-6 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-t border-white/20 dark:border-gray-700/30 transition-colors duration-300">
       <form onSubmit={handleSubmit} className="flex items-end gap-4">
@@ -74,6 +83,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         </div>
         <div className="flex-1 relative">
           <textarea
+            ref={textareaRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Type your message..."
@@ -84,12 +94,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           <button
             type="submit"
             disabled={!message.trim() || disabled}
-            className="absolute right-3 bottom-3 w-11 h-11 bg-gradient-to-br from-violet-500 via-purple-500 to-blue-500 text-white rounded-2xl flex items-center justify-center"
+            className="absolute right-3 bottom-3 w-11 h-11 bg-gradient-to-br from-violet-500 via-purple-500 to-blue-500 text-white rounded-2xl flex items-center justify-center disabled:opacity-50"
           >
             <Send className="w-5 h-5" />
           </button>
         </div>
       </form>
+
       {showManualInput && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-gray-900/20 dark:shadow-black/40 border border-gray-200/50 dark:border-gray-700/50 w-full max-w-md animate-modal">
@@ -130,9 +141,9 @@ const ManualInputForm: React.FC<ManualInputFormProps> = ({ onClose, onSendMessag
     e.preventDefault()
     if (!amount || !name) return
     const transactionData = {
-      name: name,
+      name,
       amount: parseFloat(amount),
-      currency: currency,
+      currency,
       created_at: new Date(date).toISOString(),
       transaction_type: transactionType,
       transfer_note: transferNote || ""
@@ -151,7 +162,7 @@ const ManualInputForm: React.FC<ManualInputFormProps> = ({ onClose, onSendMessag
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Ví dụ: Restaurant AAC, John Doe..."
-          className="w-full px-4 py-3 bg-white/80 dark:bg-gray-700/80 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors duration-200"
+          className="w-full px-4 py-3 bg-white/80 dark:bg-gray-700/80 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500"
           required
         />
       </div>
@@ -161,7 +172,7 @@ const ManualInputForm: React.FC<ManualInputFormProps> = ({ onClose, onSendMessag
           <button
             type="button"
             onClick={() => setTransactionType('Incoming')}
-            className={`flex-1 px-4 py-2 rounded-xl transition-colors duration-200 ${transactionType === 'Incoming'
+            className={`flex-1 px-4 py-2 rounded-xl ${transactionType === 'Incoming'
               ? 'bg-green-500 text-white'
               : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
           >
@@ -170,7 +181,7 @@ const ManualInputForm: React.FC<ManualInputFormProps> = ({ onClose, onSendMessag
           <button
             type="button"
             onClick={() => setTransactionType('Outgoing')}
-            className={`flex-1 px-4 py-2 rounded-xl transition-colors duration-200 ${transactionType === 'Outgoing'
+            className={`flex-1 px-4 py-2 rounded-xl ${transactionType === 'Outgoing'
               ? 'bg-red-500 text-white'
               : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
           >
@@ -186,7 +197,7 @@ const ManualInputForm: React.FC<ManualInputFormProps> = ({ onClose, onSendMessag
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="100"
-            className="w-full px-4 py-3 bg-white/80 dark:bg-gray-700/80 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors duration-200"
+            className="w-full px-4 py-3 bg-white/80 dark:bg-gray-700/80 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500"
             required
           />
         </div>
@@ -195,7 +206,7 @@ const ManualInputForm: React.FC<ManualInputFormProps> = ({ onClose, onSendMessag
           <select
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
-            className="w-full px-4 py-3 bg-white/80 dark:bg-gray-700/80 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors duration-200"
+            className="w-full px-4 py-3 bg-white/80 dark:bg-gray-700/80 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500"
           >
             {currencies.map((curr) => (
               <option key={curr} value={curr}>{curr}</option>
@@ -210,7 +221,7 @@ const ManualInputForm: React.FC<ManualInputFormProps> = ({ onClose, onSendMessag
           value={transferNote}
           onChange={(e) => setTransferNote(e.target.value)}
           placeholder="Ví dụ: Business lunch, Mua sắm, Lương tháng..."
-          className="w-full px-4 py-3 bg-white/80 dark:bg-gray-700/80 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors duration-200"
+          className="w-full px-4 py-3 bg-white/80 dark:bg-gray-700/80 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500"
         />
       </div>
       <div>
@@ -219,21 +230,21 @@ const ManualInputForm: React.FC<ManualInputFormProps> = ({ onClose, onSendMessag
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="w-full px-4 py-3 bg-white/80 dark:bg-gray-700/80 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors duration-200"
+          className="w-full px-4 py-3 bg-white/80 dark:bg-gray-700/80 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500"
         />
       </div>
       <div className="flex gap-3 pt-4">
         <button
           type="button"
           onClick={onClose}
-          className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
+          className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600"
         >
           Hủy
         </button>
         <button
           type="submit"
           disabled={!amount || !name}
-          className="flex-1 px-4 py-3 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl hover:from-violet-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          className="flex-1 px-4 py-3 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl hover:from-violet-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Thêm giao dịch
         </button>

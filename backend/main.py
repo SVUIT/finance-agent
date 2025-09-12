@@ -1,18 +1,22 @@
 import os
 import tempfile
+import traceback
 from fastapi import FastAPI, File, UploadFile, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from langgraph.graph import StateGraph, END 
+from langgraph.graph import StateGraph, END
+from openai import OpenAI
+from dotenv import load_dotenv
 
 from agents.categorize_agent import csv_reader, categorize, GraphState
 from models import User, UserSettings
 from auth import create_user, authenticate_user, create_access_token, verify_token
 from config import get_db, create_tables
 
+# Build workflow graph
 workflow = StateGraph(GraphState)
 workflow.add_node("csv_reader", csv_reader)
 workflow.add_node("categorizer", categorize)
@@ -21,6 +25,7 @@ workflow.add_edge("csv_reader", "categorizer")
 workflow.add_edge("categorizer", END)
 graph = workflow.compile()
 
+# FastAPI app
 app = FastAPI(title="Transaction Categorizer Multi-Agent")
 
 create_tables()
@@ -33,8 +38,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-security = HTTPBearer()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o-mini")
+DEFAULT_TEMPERATURE = float(os.getenv("DEFAULT_LLM_TEMPERATURE", "0.2"))
+MAX_TOKENS = int(os.getenv("MAX_TOKENS", "2000"))
+EMBEDDINGS_MODEL = os.getenv("EMBEDDINGS_MODEL", "text-embedding-3-small")
 
+security = HTTPBearer()
+client = OpenAI()
+
+# In-memory conversation store
+conversations = {}
+
+# Request models
 class SignupRequest(BaseModel):
     name: str
     email: str
@@ -44,6 +60,10 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
+class ChatRequest(BaseModel):
+    message: str
+
+# Auth dependencies
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
     try:
         payload = verify_token(credentials.credentials)
@@ -57,6 +77,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     except Exception:
         raise HTTPException(status_code=401, detail="Xác thực thất bại")
 
+# Routes
 @app.post("/auth/signup")
 async def signup(req: SignupRequest, db: Session = Depends(get_db)):
     try:
@@ -72,8 +93,6 @@ async def signup(req: SignupRequest, db: Session = Depends(get_db)):
         raise e
     except Exception:
         raise HTTPException(status_code=500, detail="Có lỗi xảy ra khi đăng ký")
-
-import traceback
 
 @app.post("/auth/login")
 async def login(req: LoginRequest, db: Session = Depends(get_db)):
@@ -95,7 +114,6 @@ async def login(req: LoginRequest, db: Session = Depends(get_db)):
         print("🔥 Error in login:", str(e))
         traceback.print_exc()
         raise HTTPException(status_code=500, detail="Có lỗi xảy ra khi đăng nhập")
-
 
 @app.get("/auth/me")
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
@@ -130,18 +148,31 @@ async def categorize_file(file: UploadFile = File(...), current_user: User = Dep
             os.remove(tmp_path)
 
 @app.post("/chat")
-async def chat(request: dict, current_user: User = Depends(get_current_user)):
-    try:
-        message = request.get("message", "")
-        if "upload" in message.lower() or "tải lên" in message.lower():
-            response_text = "Vui lòng sử dụng nút 📎 để upload file CSV của bạn."
-        elif "help" in message.lower() or "giúp" in message.lower():
-            response_text = "Tôi có thể giúp bạn phân loại và phân tích giao dịch từ file CSV."
-        else:
-            response_text = "Vui lòng upload file CSV để bắt đầu!"
-        return {"message": response_text}
-    except Exception:
-        raise HTTPException(status_code=500, detail="Có lỗi xảy ra khi xử lý chat")
+async def chat_with_bot(req: ChatRequest, current_user: User = Depends(get_current_user)):
+    user_id = str(current_user.id)
+    user_message = req.message
+
+    if not user_message:
+        raise HTTPException(status_code=400, detail="Message is required")
+
+    if user_id not in conversations:
+        conversations[user_id] = [
+            {"role": "system", "content": "Bạn là trợ lý AI tài chính. Bạn giúp phân loại và phân tích file CSV giao dịch."}
+        ]
+
+    conversations[user_id].append({"role": "user", "content": user_message})
+
+    response = client.chat.completions.create(
+        model=LLM_MODEL,
+        messages=conversations[user_id],
+        temperature=DEFAULT_TEMPERATURE,
+        max_tokens=MAX_TOKENS,
+    )
+
+    bot_message = response.choices[0].message.content
+    conversations[user_id].append({"role": "assistant", "content": bot_message})
+
+    return {"reply": bot_message}
 
 @app.get("/settings")
 async def get_settings(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

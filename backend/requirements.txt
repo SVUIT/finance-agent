@@ -11,3 +11,4 @@ sqlalchemy
 pymysql
 langchain_community
 sqlmodel
+numexpr

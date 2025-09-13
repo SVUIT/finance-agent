@@ -1,59 +1,71 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { Send, Plus, Edit3 } from 'lucide-react'
+import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
+import { Send, Plus, Edit3 } from 'lucide-react';
+import { ManualInputForm } from './ManualInputForm';
 
 interface ChatInputProps {
-  onSendMessage: (message: string) => void
-  disabled?: boolean
+  onSendMessage: (message: string) => void;
+  onUploadFile: (file: File) => void;
+  disabled?: boolean;
 }
 
-export const ChatInput: React.FC<ChatInputProps> = ({ 
+const ChatInput: React.FC<ChatInputProps> = memo(({ 
   onSendMessage, 
+  onUploadFile,
   disabled = false 
 }) => {
-  const [message, setMessage] = useState('')
-  const [showDropdown, setShowDropdown] = useState(false)
-  const [showManualInput, setShowManualInput] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement | null>(null)
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+  const [message, setMessage] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [showManualInput, setShowManualInput] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
     if (message.trim() && !disabled) {
-      onSendMessage(message.trim())
-      setMessage('')
+      onSendMessage(message.trim());
+      setMessage('');
     }
-  }
+  }, [message, disabled, onSendMessage]);
 
-  const handlePlusClick = () => {
-    setShowDropdown(!showDropdown)
-  }
+  const handlePlusClick = useCallback(() => {
+    setShowDropdown(prev => !prev);
+  }, []);
 
-  const handleManualInput = () => {
-    setShowManualInput(true)
-    setShowDropdown(false)
-  }
+  const handleManualInput = useCallback(() => {
+    setShowManualInput(true);
+    setShowDropdown(false);
+  }, []);
 
+  const closeManualInput = useCallback(() => {
+    setShowManualInput(false);
+  }, []);
+
+  // Handle click outside dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowDropdown(false)
+        setShowDropdown(false);
       }
-    }
-    if (showDropdown) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [showDropdown])
+    };
 
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = '0px'
-      const scrollHeight = textareaRef.current.scrollHeight
-      textareaRef.current.style.height = scrollHeight + 'px'
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
     }
-  }, [message])
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDropdown]);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = '0px';
+      const scrollHeight = textarea.scrollHeight;
+      textarea.style.height = `${scrollHeight}px`;
+    }
+  }, [message]);
 
   return (
     <div className="p-6 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-t border-white/20 dark:border-gray-700/30 transition-colors duration-300">
@@ -64,6 +76,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               type="button"
               onClick={handlePlusClick}
               className="w-11 h-11 bg-gradient-to-br from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white rounded-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg shadow-violet-500/25 group"
+              aria-label="Show options"
             >
               <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
             </button>
@@ -74,8 +87,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   onClick={handleManualInput}
                   className="w-full px-4 py-3 text-left hover:bg-gray-100/80 dark:hover:bg-gray-700/80 transition-colors duration-200 flex items-center gap-3"
                 >
-                  <Edit3 className="w-4 h-4 text-green-500" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Nhập tay dữ liệu</span>
+                  <Edit3 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">Nhập tay dữ liệu</span>
                 </button>
               </div>
             )}
@@ -86,15 +99,22 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             ref={textareaRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
             placeholder="Type your message..."
             disabled={disabled}
-            className="w-full px-6 py-4 pr-16 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-3xl resize-none focus:outline-none"
+            className="w-full px-6 py-4 pr-16 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-3xl resize-none focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all duration-200"
             rows={1}
           />
           <button
             type="submit"
             disabled={!message.trim() || disabled}
-            className="absolute right-3 bottom-3 w-11 h-11 bg-gradient-to-br from-violet-500 via-purple-500 to-blue-500 text-white rounded-2xl flex items-center justify-center disabled:opacity-50"
+            className="absolute right-3 bottom-3 w-11 h-11 bg-gradient-to-br from-violet-500 via-purple-500 to-blue-500 text-white rounded-2xl flex items-center justify-center disabled:opacity-50 hover:opacity-90 transition-opacity duration-200"
+            aria-label="Send message"
           >
             <Send className="w-5 h-5" />
           </button>
@@ -108,20 +128,25 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">Nhập dữ liệu tài chính</h3>
                 <button
-                  onClick={() => setShowManualInput(false)}
+                  onClick={closeManualInput}
                   className="w-8 h-8 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors duration-200"
+                  aria-label="Close dialog"
                 >
                   <span className="text-gray-500 dark:text-gray-400">×</span>
                 </button>
               </div>
-              <ManualInputForm onClose={() => setShowManualInput(false)} onSendMessage={onSendMessage} />
+              <ManualInputForm onClose={closeManualInput} onSendMessage={onSendMessage} />
             </div>
           </div>
         </div>
       )}
     </div>
-  )
-}
+  );
+});
+
+ChatInput.displayName = 'ChatInput';
+
+export { ChatInput };
 
 interface ManualInputFormProps {
   onClose: () => void

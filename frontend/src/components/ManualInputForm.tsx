@@ -1,4 +1,4 @@
-import { useState, ChangeEvent, FormEvent } from 'react';
+import * as React from 'react';
 
 interface ManualInputFormProps {
   onClose: () => void;
@@ -6,15 +6,41 @@ interface ManualInputFormProps {
 }
 
 const ManualInputForm = ({ onClose, onSendMessage }: ManualInputFormProps) => {
-  const [name, setName] = useState('');
-  const [amount, setAmount] = useState('');
-  const [currency, setCurrency] = useState('VND');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [transactionType, setTransactionType] = useState<'Incoming' | 'Outgoing'>('Outgoing');
-  const [transferNote, setTransferNote] = useState('');
+  const [name, setName] = React.useState('');
+  const [amount, setAmount] = React.useState('');
+  const [currency, setCurrency] = React.useState('VND');
+  const [date, setDateValue] = React.useState(new Date().toISOString().split('T')[0]);
+  const [transactionType, setTransactionType] = React.useState<'Incoming' | 'Outgoing'>('Outgoing');
+  const [transferNote, setTransferNote] = React.useState('');
   const currencies = ['VND', '$', '€', '¥', '£', '₩'];
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    switch (name) {
+      case 'name':
+        setName(value);
+        break;
+      case 'amount':
+        setAmount(value);
+        break;
+      case 'currency':
+        setCurrency(value);
+        break;
+      case 'date':
+        setDateValue(value);
+        break;
+      case 'transactionType':
+        setTransactionType(value as 'Incoming' | 'Outgoing');
+        break;
+      case 'transferNote':
+        setTransferNote(value);
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || !name) return;
     

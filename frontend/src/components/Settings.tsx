@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { useAuth } from "../contexts/AuthContext"
 import { useNavigate } from "react-router-dom"
 
@@ -23,9 +23,11 @@ const Settings: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [open, setOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   const API = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
+  // Fetch settings on mount
   useEffect(() => {
     if (!token) return
     fetch(`${API}/settings`, {
@@ -36,8 +38,20 @@ const Settings: React.FC = () => {
       .catch(() => {})
   }, [token])
 
+  // Close dropdown if clicked outside (only when open)
+  useEffect(() => {
+    if (!open) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [open]);
+
   const save = async () => {
-    if (!token) return
+    if (!token || loading) return
     setLoading(true)
     setMsg(null)
     try {
@@ -59,7 +73,7 @@ const Settings: React.FC = () => {
   }
 
   const sendTest = async () => {
-    if (!token) return
+    if (!token || loading) return
     setLoading(true)
     setMsg(null)
     try {
@@ -80,13 +94,24 @@ const Settings: React.FC = () => {
   const change = (k: keyof SettingsData, v: string | boolean) =>
     setSettings((p) => ({ ...p, [k]: v }))
 
+  // Auto-hide message
+  useEffect(() => {
+    if (!msg) return
+    const timer = setTimeout(() => setMsg(null), 4000)
+    return () => clearTimeout(timer)
+  }, [msg])
+
   return (
     <div className="p-6 max-w-xl mx-auto relative overflow-x-auto">
-      <button onClick={() => setOpen((o) => !o)} className="absolute top-2 right-2">
+      <button onClick={() => setOpen((o) => !o)} className="relative top-2 right-2">
         ⚙️
       </button>
+
       {open && (
-        <div className="absolute top-12 right-2 bg-gray-900 text-white rounded-lg shadow-lg p-3 z-50 w-48 border border-gray-700 overflow-y-auto max-h-60">
+        <div
+          ref={menuRef}
+          className="relative top-10 right-0 bg-gray-900 text-white rounded-lg shadow-lg p-2 z-[999] w-48 border border-gray-700 overflow-y-auto max-h-60"
+        >
           <button
             onClick={() => navigate("/")}
             className="block w-full text-left px-3 py-2 hover:bg-gray-800 rounded"
@@ -101,7 +126,13 @@ const Settings: React.FC = () => {
           </button>
         </div>
       )}
-      {msg && <div className={msg.type === "success" ? "text-green-600" : "text-red-600"}>{msg.text}</div>}
+
+      {msg && (
+        <div className={`mt-2 ${msg.type === "success" ? "text-green-600" : "text-red-600"}`}>
+          {msg.text}
+        </div>
+      )}
+
       <div className="flex flex-col gap-2 my-4">
         <input
           value={settings.name}
@@ -116,6 +147,7 @@ const Settings: React.FC = () => {
           className="border rounded p-2"
         />
       </div>
+
       <label className="block">
         <input
           type="checkbox"
@@ -140,6 +172,7 @@ const Settings: React.FC = () => {
         />{" "}
         Báo cáo tháng
       </label>
+
       <div className="flex gap-3 mt-4">
         <button
           onClick={sendTest}

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Bot, MoreVertical, Moon, Sun, LogOut, User, Settings } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Bot, Moon, Sun, LogOut, User, Settings } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -10,9 +10,20 @@ export const ChatHeader: React.FC = () => {
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const navigate = useNavigate();
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
-    <div className="flex items-center justify-between p-6 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-white/20 dark:border-gray-700/30 transition-colors duration-300">
+    <div className="relative z-40 flex items-center justify-between p-6 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-white/20 dark:border-gray-700/30 transition-colors duration-300">
       <div className="flex items-center gap-4">
         <div className="relative group">
           <div className="w-14 h-14 bg-gradient-to-br from-violet-500 via-purple-500 to-blue-500 dark:from-violet-400 dark:via-purple-400 dark:to-blue-400 rounded-3xl flex items-center justify-center shadow-xl shadow-violet-500/25 dark:shadow-violet-400/20 ring-2 ring-white/30 dark:ring-gray-700/30 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
@@ -28,10 +39,9 @@ export const ChatHeader: React.FC = () => {
           <p className="text-sm text-gray-600 dark:text-gray-400">Xin chào, {user?.name || 'User'}!</p>
         </div>
       </div>
-      
+
       <div className="flex items-center gap-3">
         <HealthIndicator />
-        
         <button
           onClick={toggleTheme}
           className="p-3 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 rounded-2xl transition-all duration-300 hover:scale-110 active:scale-95 backdrop-blur-sm group"
@@ -42,16 +52,13 @@ export const ChatHeader: React.FC = () => {
             <Moon className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:rotate-12 transition-transform duration-300" />
           )}
         </button>
-        
-        {/* User Menu */}
-        <div className="relative">
+        <div className="relative z-50" ref={menuRef}>
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
             className="p-3 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 rounded-2xl transition-all duration-300 hover:scale-110 active:scale-95 backdrop-blur-sm group"
           >
             <User className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-violet-500 transition-colors" />
           </button>
-          
           {showUserMenu && (
             <div className="absolute right-0 top-full mt-2 w-48 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/30 py-2 z-50">
               <div className="px-4 py-2 border-b border-gray-200/20 dark:border-gray-700/20">
